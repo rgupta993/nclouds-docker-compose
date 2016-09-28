@@ -1,0 +1,60 @@
+consul:
+  image: progrium/consul
+  container_name: consul
+  hostname: consul-server
+  ports:
+    - "${HOST_IP}:8500:8500"
+    - "${HOST_IP}:8400:8400"
+    - "53:53/udp"
+  command: -server -advertise ${HOST_IP} -bootstrap
+  restart: unless-stopped
+
+registrator:
+  image: gliderlabs/registrator
+  container_name: registrator
+  links:
+    - "consul:consul"
+  hostname: registrator
+  command: consul://consul:8500
+  volumes:
+    - "/var/run/docker.sock:/tmp/docker.sock"
+  restart: unless-stopped
+
+redis:
+  image: redis
+  container_name: redis
+  ports:
+    - "6379:6379"
+  restart: unless-stopped
+
+nclouds1:
+  build: ./nclouds-app
+  hostname: nclouds1
+  container_name: nclouds1
+  ports:
+    - "4001:4000"
+  dns:
+    - 172.17.0.1
+    - 8.8.8.8
+  restart: unless-stopped
+
+nclouds2:
+  build: ./nclouds-app
+  hostname: nclouds2
+  container_name: nclouds2
+  ports:
+    - "4002:4000"
+  dns:
+    - 172.17.0.1
+    - 8.8.8.8
+  restart: unless-stopped
+
+nginx:
+  build: ./nginx
+  container_name: nginx
+  ports:
+    - "80:80"
+  dns:
+    - 172.17.0.1
+    - 8.8.8.8
+  restart: unless-stopped
